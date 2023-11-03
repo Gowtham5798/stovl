@@ -1,0 +1,97 @@
+# Values.yaml
+
+nginx:
+  image: nginx:latest
+  replicas: 2
+
+service:
+  type: ClusterIP
+  port: 80
+
+secret:
+  username: myuser
+  password: mypassword
+
+ingress:
+  enabled: true
+  host: my-nginx.example.com
+  
+ 
+# Configmap
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-configmap
+data:
+  nginx.conf:
+    server {
+      listen 80;
+      server_name my-nginx-server;
+    }
+
+# deployment
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-nginx
+spec:
+  replicas: {{ .Values.nginx.replicas }}
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: {{ .Values.nginx.image }}
+        ports:
+        - containerPort: 80
+
+# ingress
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-nginx-ingress
+spec:
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Release.Name }}-nginx-svc
+            port:
+              number: {{ .Values.service.port }}
+			  
+# Secret
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+type: Opaque
+data:
+  username: {{ .Values.secret.username | b64enc | quote }}
+  password: {{ .Values.secret.password | b64enc | quote }}
+
+# service
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-nginx-svc
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 80
+  selector:
+    app: nginx
