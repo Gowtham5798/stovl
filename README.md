@@ -44,6 +44,7 @@ Copy the cacert from the above command and paste in the vi editor to a new file.
 # This command will show the cacert used here
 vi cert.pem
 ```
+Pass the cert.pem in the curl command to validate the certificate
 
 ```bash
 # This command allow us to validate with certificate since we are passing the certificate along with command so need to use -k or -insecure to skip the certificate validation
